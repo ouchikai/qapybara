@@ -1,21 +1,35 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "src/**/*.{ts,tsx}",
+      "tests/**/*.{ts,tsx}",
+      "prisma/**",
+      "*.{ts,mjs,json}",
+      "!src/imports",
+      "!src/main.tsx",
+      "!src/app/App.tsx",
+      "!src/app/components",
+      "!src/app/contexts",
+      "!vite.config.ts",
+      "!postcss.config.mjs",
+      "!.next"
+    ]
+  },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space"
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
+    "indentStyle": "space",
+    "lineWidth": 100
   },
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "error"
+      }
     }
   },
-  "files": {
-    "includes": ["**", "!.next", "!node_modules", "!coverage"]
-  }
+  "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }
