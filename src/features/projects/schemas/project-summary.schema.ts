@@ -10,6 +10,9 @@ export const projectSummarySchema = z.object({
   status: projectStatusSchema,
   dueDate: z.iso.datetime().nullable(),
   openIssues: z.number().int().nonnegative(),
+  testCases: z.number().int().nonnegative(),
+  openBugs: z.number().int().nonnegative(),
+  passRate: z.number().int().min(0).max(100),
 });
 
 export const listProjectsResponseSchema = z.object({

@@ -1,4 +1,4 @@
-import { IssueStatus, ProjectStatus } from "@prisma/client";
+import { BugStatus, IssueStatus, ProjectStatus, TestCaseStatus } from "@prisma/client";
 
 import type { ProjectSummary } from "@/features/projects/types/project-summary";
 import { prisma } from "@/server/db/prisma";
@@ -59,7 +59,109 @@ export class PrismaProjectRepository implements ProjectRepository {
       },
     });
 
+    if (projects.length === 0) {
+      return [];
+    }
+
+    const projectIds = projects.map((project) => project.id);
+    const issues = await prisma.issue.findMany({
+      where: {
+        projectId: {
+          in: projectIds,
+        },
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        projectId: true,
+      },
+    });
+
+    const issueIds = issues.map((issue) => issue.id);
+    const issueProjectMap = new Map(issues.map((issue) => [issue.id, issue.projectId]));
+    const metricsByProject = new Map<
+      string,
+      { testCases: number; openBugs: number; passedCases: number; failedCases: number }
+    >();
+
+    for (const projectId of projectIds) {
+      metricsByProject.set(projectId, {
+        testCases: 0,
+        openBugs: 0,
+        passedCases: 0,
+        failedCases: 0,
+      });
+    }
+
+    if (issueIds.length > 0) {
+      const [testCases, bugs] = await Promise.all([
+        prisma.testCase.findMany({
+          where: {
+            issueId: {
+              in: issueIds,
+            },
+            deletedAt: null,
+          },
+          select: {
+            issueId: true,
+            status: true,
+          },
+        }),
+        prisma.bug.findMany({
+          where: {
+            issueId: {
+              in: issueIds,
+            },
+            deletedAt: null,
+          },
+          select: {
+            issueId: true,
+            status: true,
+          },
+        }),
+      ]);
+
+      for (const testCase of testCases) {
+        const projectId = issueProjectMap.get(testCase.issueId);
+        if (!projectId) {
+          continue;
+        }
+
+        const metrics = metricsByProject.get(projectId);
+        if (!metrics) {
+          continue;
+        }
+
+        metrics.testCases += 1;
+        if (testCase.status === TestCaseStatus.PASSED) {
+          metrics.passedCases += 1;
+        }
+        if (testCase.status === TestCaseStatus.FAILED) {
+          metrics.failedCases += 1;
+        }
+      }
+
+      for (const bug of bugs) {
+        if (bug.status === BugStatus.CLOSED) {
+          continue;
+        }
+
+        const projectId = issueProjectMap.get(bug.issueId);
+        if (!projectId) {
+          continue;
+        }
+
+        const metrics = metricsByProject.get(projectId);
+        if (!metrics) {
+          continue;
+        }
+
+        metrics.openBugs += 1;
+      }
+    }
+
     return projects.map((project) => ({
+      ...buildProjectCardMetrics(metricsByProject.get(project.id)),
       id: project.id,
       repositoryId: project.repositoryId,
       slug: project.slug,
@@ -69,6 +171,29 @@ export class PrismaProjectRepository implements ProjectRepository {
       openIssues: project._count.issues,
     }));
   }
+}
+
+function buildProjectCardMetrics(
+  metrics:
+    | { testCases: number; openBugs: number; passedCases: number; failedCases: number }
+    | undefined,
+): Pick<ProjectSummary, "testCases" | "openBugs" | "passRate"> {
+  if (!metrics) {
+    return {
+      testCases: 0,
+      openBugs: 0,
+      passRate: 0,
+    };
+  }
+
+  const denominator = metrics.passedCases + metrics.failedCases;
+  const passRate = denominator > 0 ? Math.round((metrics.passedCases / denominator) * 100) : 0;
+
+  return {
+    testCases: metrics.testCases,
+    openBugs: metrics.openBugs,
+    passRate,
+  };
 }
 
 function normalizeProjectStatus(status: ProjectStatus): ProjectSummary["status"] {

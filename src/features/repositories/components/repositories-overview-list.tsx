@@ -1,4 +1,5 @@
 import { Bug, FolderKanban, GitBranch, Settings } from "lucide-react";
+import type { Route } from "next";
 import Link from "next/link";
 
 import { Badge } from "@/app/components/ui/badge";
@@ -63,7 +64,7 @@ export function RepositoriesOverviewList({ repositories }: RepositoriesOverviewL
                   <div className="min-w-0">
                     <CardTitle className="text-2xl font-semibold leading-tight tracking-tight">
                       <Link
-                        href={`/repositories/${repository.id}`}
+                        href={`/repositories/${repository.id}/projects` as Route}
                         className="block truncate rounded-sm underline-offset-4 transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {repository.name}

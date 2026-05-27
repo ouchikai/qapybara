@@ -15,6 +15,9 @@ export class InMemoryProjectRepository implements ProjectRepository {
         status: "ACTIVE",
         dueDate: new Date("2026-06-15T00:00:00.000Z").toISOString(),
         openIssues: 8,
+        testCases: 45,
+        openBugs: 4,
+        passRate: 92,
       },
       {
         id: "project_security_enhancement",
@@ -24,6 +27,9 @@ export class InMemoryProjectRepository implements ProjectRepository {
         status: "PLANNING",
         dueDate: new Date("2026-06-30T00:00:00.000Z").toISOString(),
         openIssues: 3,
+        testCases: 32,
+        openBugs: 2,
+        passRate: 88,
       },
     ];
   }
