@@ -71,6 +71,20 @@ enum CustomFieldType {
   TEXTAREA
 }
 
+enum IssuePriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RiskLevel {
+  S
+  A
+  B
+  C
+}
+
 model Organization {
   id            String       @id @default(cuid())
   slug          String       @unique
@@ -221,19 +235,23 @@ model Project {
 }
 
 model Issue {
-  id                  String      @id @default(cuid())
+  id                  String         @id @default(cuid())
   organizationId      String
   projectId           String
   externalIssueNumber Int?
   title               String
   description         String?
-  status              IssueStatus @default(OPEN)
+  status              IssueStatus    @default(OPEN)
+  priority            IssuePriority?
+  labels              String[]       @default([])
+  changedFiles        String[]       @default([])
   assigneeId          String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
   deletedAt           DateTime?
   testCases           TestCase[]
   bugs                Bug[]
+  aiAnalysis          IssueAiAnalysis?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -357,4 +375,43 @@ model OutboxEvent {
 
   @@index([organizationId, aggregateType, aggregateId, createdAt])
   @@index([publishedAt])
+}
+
+/// AI影響分析の結果ルート。1 Issue につき 1 件（@unique）。
+model IssueAiAnalysis {
+  id                  String                    @id @default(cuid())
+  issueId             String                    @unique
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  issue               Issue                     @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  impactAreas         IssueImpactArea[]
+  testCaseSuggestions IssueTestCaseSuggestion[]
+
+  @@index([issueId])
+}
+
+/// AIが検出した影響エリア（リスク S/A/B/C 付き）。
+model IssueImpactArea {
+  id               String          @id @default(cuid())
+  analysisId       String
+  area             String
+  risk             RiskLevel
+  description      String
+  affectedFeatures String[]        @default([])
+  analysis         IssueAiAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+}
+
+/// AIが生成したテストケース候補。
+model IssueTestCaseSuggestion {
+  id         String          @id @default(cuid())
+  analysisId String
+  title      String
+  risk       RiskLevel
+  category   String
+  steps      String[]        @default([])
+  analysis   IssueAiAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
 }

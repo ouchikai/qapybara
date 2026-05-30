@@ -18,7 +18,8 @@ export default async function ProjectIssuesPage({ params }: ProjectIssuesPagePro
         <h1 className="text-2xl font-semibold tracking-tight">Project Issues</h1>
         <p className="text-sm text-muted-foreground">projectId: {projectId}</p>
       </header>
-      <IssueList projectId={projectId} />
+      {/* repositoryId はこのレガシールートでは不明なため空文字列を渡す */}
+      <IssueList repositoryId="" projectId={projectId} />
     </main>
   );
 }

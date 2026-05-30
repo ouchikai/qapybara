@@ -166,6 +166,9 @@ export class PrismaProjectRepository implements ProjectRepository {
       repositoryId: project.repositoryId,
       slug: project.slug,
       name: project.name,
+      // description は現時点でDBスキーマ未定義のためnull。
+      // 将来マイグレーション追加後に project.description へ変更する。
+      description: null,
       status: normalizeProjectStatus(project.status),
       dueDate: project.dueDate?.toISOString() ?? null,
       openIssues: project._count.issues,

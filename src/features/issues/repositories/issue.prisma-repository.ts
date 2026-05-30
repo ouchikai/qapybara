@@ -1,6 +1,10 @@
-import { IssueStatus } from "@prisma/client";
+import { type IssuePriority as PrismaIssuePriority, IssueStatus } from "@prisma/client";
 
-import type { IssueListFilters, IssueSummary } from "@/features/issues/types/issue-summary";
+import type {
+  IssueListFilters,
+  IssuePriority,
+  IssueSummary,
+} from "@/features/issues/types/issue-summary";
 import { prisma } from "@/server/db/prisma";
 import { ApiError } from "@/server/http/api-error";
 
@@ -44,6 +48,13 @@ export class PrismaIssueRepository implements IssueRepository {
             displayName: true,
           },
         },
+        _count: {
+          select: {
+            testCases: {
+              where: { deletedAt: null },
+            },
+          },
+        },
       },
       orderBy: {
         updatedAt: "desc",
@@ -56,11 +67,22 @@ export class PrismaIssueRepository implements IssueRepository {
       externalIssueNumber: issue.externalIssueNumber,
       title: issue.title,
       status: issue.status,
+      priority: toPriorityDto(issue.priority),
+      labels: issue.labels,
       assigneeId: issue.assignee?.id ?? null,
       assigneeName: issue.assignee?.displayName ?? null,
+      createdAt: issue.createdAt.toISOString(),
       updatedAt: issue.updatedAt.toISOString(),
+      testCaseCount: issue._count.testCases,
     }));
   }
+}
+
+function toPriorityDto(priority: PrismaIssuePriority | null): IssuePriority | null {
+  if (!priority) {
+    return null;
+  }
+  return priority.toLowerCase() as IssuePriority;
 }
 
 function parseIssueStatus(status: IssueSummary["status"]): IssueStatus {
