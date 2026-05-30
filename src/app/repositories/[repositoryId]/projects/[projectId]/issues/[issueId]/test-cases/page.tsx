@@ -2,7 +2,9 @@ import { ArrowLeft } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
+import { buildLoginRedirectPath } from "@/features/auth/lib/login-redirect";
 import { getRiskBadgeClassName } from "@/features/issues/lib/risk";
 import { IssueDetailService } from "@/features/issues/services/issue-detail.service";
 import type { TestCaseSuggestion } from "@/features/issues/types/issue-detail";
@@ -28,6 +30,7 @@ export default async function TestCaseEditorPage({
 }: TestCaseEditorPageProps) {
   const { repositoryId, projectId, issueId } = await params;
   const { suggestions: suggestionsParam } = await searchParams;
+  const currentPath = `/repositories/${repositoryId}/projects/${projectId}/issues/${issueId}/test-cases`;
 
   let analysisSuggestions: TestCaseSuggestion[] = [];
   try {
@@ -41,6 +44,9 @@ export default async function TestCaseEditorPage({
   } catch (error) {
     if (error instanceof ApiError && error.code === "NOT_FOUND") {
       notFound();
+    }
+    if (error instanceof ApiError && error.code === "UNAUTHORIZED") {
+      redirect(buildLoginRedirectPath(currentPath) as Route);
     }
     throw error;
   }

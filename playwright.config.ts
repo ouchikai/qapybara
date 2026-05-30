@@ -11,7 +11,13 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
+    env: {
+      ...process.env,
+      BETTER_AUTH_SECRET:
+        process.env.BETTER_AUTH_SECRET ?? "playwright-better-auth-secret-for-local-tests",
+      BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://127.0.0.1:3000",
+    },
   },
   projects: [
     {

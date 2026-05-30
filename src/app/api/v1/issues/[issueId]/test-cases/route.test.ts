@@ -1,8 +1,29 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GET } from "@/app/api/v1/issues/[issueId]/test-cases/route";
 
+const { mockAuthorize, mockGetRequestContext } = vi.hoisted(() => ({
+  mockAuthorize: vi.fn(),
+  mockGetRequestContext: vi.fn(),
+}));
+
+vi.mock("@/server/auth/request-context", () => ({
+  authorize: mockAuthorize,
+  getRequestContext: mockGetRequestContext,
+}));
+
 describe("GET /api/v1/issues/[issueId]/test-cases", () => {
+  beforeEach(() => {
+    mockAuthorize.mockReset();
+    mockGetRequestContext.mockReset();
+    mockAuthorize.mockImplementation(() => undefined);
+    mockGetRequestContext.mockResolvedValue({
+      organizationSlug: "default-org",
+      actorRole: "admin",
+      userId: "test-user",
+    });
+  });
+
   it("returns test cases and custom field definitions", async () => {
     const response = await GET(new Request("http://localhost"), {
       params: Promise.resolve({ issueId: "issue_124" }),

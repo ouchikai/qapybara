@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("home renders repositories overview", async ({ page }) => {
+test("home redirects unauthenticated users to login", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Repositories" })).toBeVisible();
-  await expect(page.getByLabel("repositories-overview")).toBeVisible();
+  await expect(page).toHaveURL(/\/login\?redirectTo=%2F/);
+  await expect(page.getByRole("heading", { name: "ログイン" })).toBeVisible();
 });
 
 test("health endpoint returns ok", async ({ request }) => {

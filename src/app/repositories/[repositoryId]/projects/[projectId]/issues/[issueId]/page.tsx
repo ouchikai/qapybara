@@ -1,5 +1,8 @@
+import type { Route } from "next";
 import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
+import { buildLoginRedirectPath } from "@/features/auth/lib/login-redirect";
 import { IssueDetailService } from "@/features/issues/services/issue-detail.service";
 import type { IssueDetail } from "@/features/issues/types/issue-detail";
 import { authorize, getRequestContext } from "@/server/auth/request-context";
@@ -17,7 +20,8 @@ interface IssueDetailPageProps {
 }
 
 export default async function IssueDetailPage({ params }: IssueDetailPageProps) {
-  const { issueId } = await params;
+  const { repositoryId, projectId, issueId } = await params;
+  const currentPath = `/repositories/${repositoryId}/projects/${projectId}/issues/${issueId}`;
 
   let detail: IssueDetail | null;
   try {
@@ -27,6 +31,9 @@ export default async function IssueDetailPage({ params }: IssueDetailPageProps) 
   } catch (error) {
     if (error instanceof ApiError && error.code === "NOT_FOUND") {
       notFound();
+    }
+    if (error instanceof ApiError && error.code === "UNAUTHORIZED") {
+      redirect(buildLoginRedirectPath(currentPath) as Route);
     }
     throw error;
   }

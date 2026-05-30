@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { redirectToLogin } from "@/features/auth/lib/login-redirect";
 import { queryKeys } from "@/lib/react-query/query-keys";
 import { apiErrorResponseSchema } from "@/shared/contracts/api-error";
 
@@ -37,6 +38,11 @@ async function fetchIssues(
   if (!response.ok) {
     const json: unknown = await response.json();
     const parsedError = apiErrorResponseSchema.parse(json);
+
+    if (response.status === 401) {
+      redirectToLogin();
+    }
+
     throw new Error(parsedError.error.message);
   }
 

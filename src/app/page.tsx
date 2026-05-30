@@ -1,5 +1,6 @@
-import { FolderGit2, LogOut, Menu, Plus, RefreshCcw, Users } from "lucide-react";
+import { FolderGit2, Menu, Plus, RefreshCcw, Users } from "lucide-react";
 
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { RepositoriesOverview } from "@/features/repositories/components/repositories-overview";
 
 export default function HomePage() {
@@ -34,13 +35,11 @@ export default function HomePage() {
               <p className="text-sm font-medium">田中太郎</p>
               <p className="text-xs text-muted-foreground">admin</p>
             </div>
-            <button
-              type="button"
+            <LogoutButton
               className="flex items-center gap-2 text-sm text-destructive hover:opacity-90"
             >
-              <LogOut className="size-4" />
               ログアウト
-            </button>
+            </LogoutButton>
           </div>
         </aside>
 

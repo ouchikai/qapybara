@@ -1,13 +1,13 @@
 "use client";
 
-import { GitBranch, LogOut, Menu, Users } from "lucide-react";
+import { GitBranch, Menu, Users } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { type ReactNode, useState } from "react";
 
 import { QapybaraIcon } from "@/app/components/QapybaraIcon";
 import { Button } from "@/app/components/ui/button";
+import { LogoutButton } from "@/features/auth/components/logout-button";
 import { authClient } from "@/lib/auth/client";
 
 interface RepositoriesShellProps {
@@ -27,31 +27,11 @@ export function RepositoriesShell({
   actions,
   children,
 }: RepositoriesShellProps) {
-  const router = useRouter();
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [logoutError, setLogoutError] = useState<string | null>(null);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { data: sessionData } = authClient.useSession();
 
   const userName = sessionData?.user?.name ?? "田中太郎";
-
-  const handleLogout = async () => {
-    setLogoutError(null);
-    setIsLoggingOut(true);
-
-    const { error } = await authClient.signOut();
-
-    setIsLoggingOut(false);
-
-    if (error) {
-      setLogoutError(error.message || "ログアウトに失敗しました");
-      return;
-    }
-
-    router.push("/login" as Route);
-    router.refresh();
-  };
 
   return (
     <main className="min-h-dvh bg-muted/20">
@@ -115,16 +95,11 @@ export function RepositoriesShell({
                 <p className="text-sm font-medium">{userName}</p>
                 <p className="text-xs text-muted-foreground">member</p>
               </div>
-              <button
-                type="button"
+              <LogoutButton
                 className="flex items-center gap-2 text-sm text-destructive hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
               >
-                <LogOut className="size-4" />
-                {isLoggingOut ? "ログアウト中..." : "ログアウト"}
-              </button>
-              {logoutError ? <p className="mt-2 text-xs text-destructive">{logoutError}</p> : null}
+                ログアウト
+              </LogoutButton>
               <p className="mt-3 text-xs text-muted-foreground">AI-Powered QA Workbench</p>
             </div>
           ) : null}
@@ -216,16 +191,12 @@ export function RepositoriesShell({
             <div className="mt-auto border-t pt-4">
               <p className="text-sm font-medium">{userName}</p>
               <p className="text-xs text-muted-foreground">member</p>
-              <button
-                type="button"
+              <LogoutButton
                 className="mt-3 flex items-center gap-2 text-sm text-destructive hover:opacity-90"
-                onClick={handleLogout}
-                disabled={isLoggingOut}
+                onLoggedOut={() => setMobileSidebarOpen(false)}
               >
-                <LogOut className="size-4" />
-                {isLoggingOut ? "ログアウト中..." : "ログアウト"}
-              </button>
-              {logoutError ? <p className="mt-2 text-xs text-destructive">{logoutError}</p> : null}
+                ログアウト
+              </LogoutButton>
             </div>
           </aside>
         </div>

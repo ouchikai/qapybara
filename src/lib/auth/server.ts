@@ -6,10 +6,25 @@ import { prisma } from "@/server/db/prisma";
 import { hashPassword, verifyPassword } from "./password";
 
 const fallbackBaseUrl = "http://localhost:3000";
-const fallbackSecret = "dev-only-better-auth-secret-change-me-1234567890";
+const developmentLoopbackBaseUrl = "http://127.0.0.1:3000";
+
+function getRequiredEnv(name: "BETTER_AUTH_SECRET"): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`${name} must be set`);
+  }
+
+  return value;
+}
 
 const baseURL = process.env.BETTER_AUTH_URL ?? fallbackBaseUrl;
-const secret = process.env.BETTER_AUTH_SECRET ?? fallbackSecret;
+const secret = getRequiredEnv("BETTER_AUTH_SECRET");
+const trustedOrigins = [
+  process.env.BETTER_AUTH_URL,
+  process.env.NODE_ENV === "development" ? fallbackBaseUrl : undefined,
+  process.env.NODE_ENV === "development" ? developmentLoopbackBaseUrl : undefined,
+].filter((origin): origin is string => Boolean(origin));
 
 export const auth = betterAuth({
   appName: "Qapybara",
@@ -43,9 +58,7 @@ export const auth = betterAuth({
       verify: verifyPassword,
     },
   },
-  trustedOrigins: [fallbackBaseUrl, process.env.BETTER_AUTH_URL].filter(
-    (origin): origin is string => Boolean(origin),
-  ),
+  trustedOrigins,
   advanced: {
     database: {
       generateId: false,

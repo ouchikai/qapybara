@@ -20,23 +20,11 @@ export interface RequestContext {
   userId: string;
 }
 
-function createTestFallbackContext(): RequestContext {
-  return {
-    organizationSlug: process.env.DEFAULT_ORGANIZATION_SLUG ?? "default-org",
-    actorRole: "admin",
-    userId: "test-user",
-  };
-}
-
 export async function getRequestContext(): Promise<RequestContext> {
   let requestHeaders: Headers;
   try {
     requestHeaders = await headers();
   } catch {
-    if (process.env.NODE_ENV === "test") {
-      return createTestFallbackContext();
-    }
-
     throw new ApiError("UNAUTHORIZED", "Authentication is required");
   }
 
@@ -45,10 +33,6 @@ export async function getRequestContext(): Promise<RequestContext> {
   });
 
   if (!session?.user?.id) {
-    if (process.env.NODE_ENV === "test") {
-      return createTestFallbackContext();
-    }
-
     throw new ApiError("UNAUTHORIZED", "Authentication is required");
   }
 

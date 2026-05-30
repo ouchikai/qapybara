@@ -2,8 +2,9 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { QapybaraIcon } from "@/app/components/QapybaraIcon";
@@ -20,12 +21,20 @@ import {
 import { Input } from "@/app/components/ui/input";
 
 import { type LoginInput, loginSchema } from "../schemas/login.schema";
+import { sanitizeRedirectTarget } from "../lib/safe-redirect";
 import { loginWithEmailAndPassword } from "../services/login.service";
 
-export function LoginForm() {
+interface LoginFormProps {
+  redirectTo?: string;
+  reasonMessage?: string | null;
+}
+
+export function LoginForm({ redirectTo, reasonMessage }: LoginFormProps) {
   const router = useRouter();
+  const [isHydrated, setIsHydrated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const safeRedirectTarget = sanitizeRedirectTarget(redirectTo);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -34,6 +43,12 @@ export function LoginForm() {
       password: "",
     },
   });
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  const isFormDisabled = !isHydrated || form.formState.isSubmitting;
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setSubmitError(null);
@@ -45,7 +60,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/");
+    router.push(safeRedirectTarget as Route);
     router.refresh();
   });
 
@@ -70,7 +85,7 @@ export function LoginForm() {
         </h2>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} method="post" className="space-y-4" noValidate>
             <FormField
               control={form.control}
               name="email"
@@ -89,7 +104,7 @@ export function LoginForm() {
                         autoComplete="email"
                         placeholder="user@example.com"
                         className="pl-10"
-                        disabled={form.formState.isSubmitting}
+                        disabled={isFormDisabled}
                       />
                     </div>
                   </FormControl>
@@ -116,14 +131,14 @@ export function LoginForm() {
                         autoComplete="current-password"
                         placeholder="••••••••"
                         className="pl-10 pr-10"
-                        disabled={form.formState.isSubmitting}
+                        disabled={isFormDisabled}
                       />
                       <button
                         type="button"
                         className="absolute top-1/2 right-2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => setShowPassword((current) => !current)}
                         aria-label={showPassword ? "パスワードを非表示" : "パスワードを表示"}
-                        disabled={form.formState.isSubmitting}
+                        disabled={isFormDisabled}
                       >
                         {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
@@ -141,12 +156,21 @@ export function LoginForm() {
               </Alert>
             ) : null}
 
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+            {!submitError && reasonMessage ? (
+              <Alert>
+                <AlertCircle className="size-4" aria-hidden="true" />
+                <AlertDescription>{reasonMessage}</AlertDescription>
+              </Alert>
+            ) : null}
+
+            <Button type="submit" className="w-full" disabled={isFormDisabled}>
               {form.formState.isSubmitting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   ログイン中...
                 </>
+              ) : !isHydrated ? (
+                "読み込み中..."
               ) : (
                 "ログイン"
               )}
